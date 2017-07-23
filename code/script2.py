@@ -31,7 +31,7 @@ class AmazonForest():
         self.load_data()
 
     def load_data(self):
-        self.df_train_data = pd.read_csv('../data/train_v2.csv')
+        self.df_train_data = pd.read_csv('../data/train_v2.csv') #[:1000]
         self.df_test_data = pd.read_csv('../data/sample_submission_v2.csv')
 
         flatten = lambda l: [item for sublist in l for item in sublist]
