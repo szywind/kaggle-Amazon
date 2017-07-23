@@ -1,15 +1,17 @@
 import os
 import keras as k
 
-from keras import regularizers
+from keras import regularizers, initializers
 from keras.models import Model, Sequential
-from keras.layers import Dense, Dropout, Flatten, Activation
-from keras.layers import Conv2D, MaxPooling2D, BatchNormalization
+from keras.layers import InputLayer, Dense, Dropout, Flatten, Activation
+from keras.layers import Conv2D, MaxPooling2D, BatchNormalization, GlobalAveragePooling2D
 from keras.applications.vgg16 import VGG16
 from keras.applications.vgg19 import VGG19
 from keras.applications.resnet50 import ResNet50
 from keras.applications.inception_v3 import InceptionV3
-import densenet
+from keras.layers.merge import add
+
+import densenet, densenet121
 
 
 def model1(input_dim):
@@ -183,85 +185,85 @@ def model3(input_dim):
     model.add(Dense(17, activation='sigmoid'))
     return model
 
-def pynet12(input_dim):
-    model = Sequential()
+def model4(input_dim):
     # preprocess
-    model.add(BatchNormalization(input_shape=(input_dim, input_dim, 3)))
-    model.add(Conv2D(16, kernel_size=(1, 1), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(16, (1, 1), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(16, (1, 1), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
+    x = InputLayer(input_shape = (input_dim,input_dim,3)).input
+    y1 = x
+    x = Conv2D(16, kernel_size=(1, 1), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    # x = Conv2D(16, kernel_size=(7, 7), strides=(2,2), padding='valid', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
 
-    # conv1d
-    model.add(Conv2D(16, (3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(16, (3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(128, (1, 1), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
 
-    # conv2d
-    model.add(Conv2D(128, (3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(128, (3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(128, (1, 1), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
+    y2 = x
+    x = Conv2D(32, kernel_size=(3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
 
-    model.add(Conv2D(32, (3, 3)))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+    y2 = Conv2D(32, (1, 1), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(y2)
+    x = add([x, y2])
+    x = MaxPooling2D(pool_size=(2, 2))(x)
 
-    model.add(Conv2D(64, kernel_size=(3, 3), padding='same', activation='relu'))
-    model.add(Conv2D(64, (3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(64, (3, 3)))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+    y3 = x
+    x = Conv2D(64, kernel_size=(3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Conv2D(64, (3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Conv2D(64, (3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
 
-    model.add(Conv2D(128, kernel_size=(3, 3), padding='same', activation='relu'))
-    model.add(Conv2D(128, (3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(128, (3, 3)))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+    y3 = Conv2D(64, (1, 1), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(y3)
+    x = add([x, y3])
+    x = MaxPooling2D(pool_size=(2, 2))(x)
 
-    model.add(Conv2D(256, kernel_size=(3, 3), padding='same', activation='relu'))
-    model.add(Conv2D(256, (3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(256, (3, 3)))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+    y4 = x
+    x = Conv2D(128, kernel_size=(3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Conv2D(128, (3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Conv2D(128, (3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
 
-    model.add(Flatten())
-    model.add(Dense(512))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(17, activation='sigmoid'))
-    return model
+    y4 = Conv2D(128, (1, 1), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(y4)
+    x = add([x, y4])
+    x = MaxPooling2D(pool_size=(2, 2))(x)
+
+    y5 = x
+    x = Conv2D(256, kernel_size=(3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Conv2D(256, (3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Conv2D(256, (3, 3), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    y5 = Conv2D(256, (1, 1), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(y5)
+    x = add([x, y5])
+    x = MaxPooling2D(pool_size=(2, 2))(x)
+
+    x = Conv2D(16, (1, 1), padding='same', kernel_regularizer=regularizers.L1L2(l2=1E-4), bias_regularizer=regularizers.L1L2(l2=1E-4))(x)
+
+    x = Flatten()(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(17, activation='sigmoid')(x)
+
+    return Model(input=y1, output=x)
 
 def vgg16():
     base_model = VGG16(weights=None, include_top=False, input_shape = (224,224,3))
@@ -285,17 +287,24 @@ def vgg19():
     return model
 
 
-def resNet50():
-    base_model = ResNet50(weights=None, include_top=False, input_shape = (224,224,3))
-    x = Flatten(name='flatten')(base_model.output)
-    x = Dense(17, activation='softmax', name='predictions')(x)
+def resNet50(input_dim):
+    base_model = ResNet50(weights=None, include_top=False, pooling='avg', input_shape = (input_dim,input_dim,3))
+    base_model.load_weights("../weights/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5")
+    # x = Flatten()(base_model.output)
+    x = base_model.output
+    x = Dropout(0.25)(x)
+    x = Dense(1024, activation='relu', name='fc', kernel_initializer='he_uniform')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(17, activation='softmax', name='predictions', kernel_initializer='he_uniform')(x)
     model = Model(inputs=base_model.input, outputs=x)
+    # for layer in model.layers[:25]:
+    #     layer.trainable = False
     return model
 
-def inceptionV3():
-    base_model = InceptionV3(weights=None, include_top=False, input_shape = (224,224,3))
+def inceptionV3(input_dim):
+    base_model = InceptionV3(weights=None, include_top=False, input_shape = (input_dim,input_dim,3))
     # Classification block
-    x = InceptionV3.GlobalAveragePooling2D(name='avg_pool')(base_model.output)
+    x = GlobalAveragePooling2D(name='avg_pool')(base_model.output)
     x = Dense(17, activation='softmax', name='predictions')(x)
     model = Model(inputs=base_model.input, outputs=x)
     return model
@@ -311,4 +320,13 @@ def denseNet(input_dim):
     if os.path.exists(weights_file):
         model.load_weights(weights_file)
         print("Model loaded.")
+    return model
+
+
+def denseNet121(input_dim):
+    weights_path = '../weights/densenet121_weights_tf.h5'
+
+    # Test pretrained model
+    # base_model = densenet121.DenseNet(reduction=0.5, classes=1000, weights_path=weights_path)
+    model = densenet121.densenet121_model(img_rows=input_dim, img_cols=input_dim, color_type=3, num_classes=17, weights_path = weights_path)
     return model
