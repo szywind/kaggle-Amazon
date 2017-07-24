@@ -512,7 +512,10 @@ class AmazonForest():
                     end = min(start + self.batch_size, len(self.df_test_data))
                     df_test_batch = self.df_test_data[start:end]
                     for f, tags in df_test_batch.values:
-                        img = cv2.imread('../data/test-jpg/{}.jpg'.format(f))
+                        if f.startswith('test'):
+                            img = cv2.imread('../data/test-jpg/{}.jpg'.format(f))
+                        else:
+                            img = cv2.imread('../data/test-jpg-additional/{}.jpg'.format(f))
                         img = cv2.resize(img, (self.input_dim, self.input_dim))
                         img = transformations(img, transformation)
                         x_batch.append(img)
