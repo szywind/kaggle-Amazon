@@ -19,6 +19,7 @@ from sklearn.model_selection import KFold
 
 from helpers import *
 import newnet
+import math
 
 class AmazonForest():
     def __init__(self, input_dim=256, batch_size=16, nfolds=5, epochs=300, learn_rate=1e-4):
@@ -31,8 +32,8 @@ class AmazonForest():
         self.load_data()
 
     def load_data(self):
-        self.df_train_data = pd.read_csv('../data/train_v2.csv') #[:1000]
-        self.df_test_data = pd.read_csv('../data/sample_submission_v2.csv')
+        self.df_train_data = pd.read_csv('../data/train_v2.csv') # [:100]
+        self.df_test_data = pd.read_csv('../data/sample_submission_v2.csv') # [:100]
 
         flatten = lambda l: [item for sublist in l for item in sublist]
         labels = list(set(flatten([l.split(' ') for l in self.df_train_data['tags'].values])))
@@ -313,12 +314,12 @@ class AmazonForest():
 
             self.model.fit_generator(
                 generator=train_generator(),
-                steps_per_epoch=(len(df_train) // self.batch_size) + 1,
+                steps_per_epoch=math.ceil(len(df_train) / float(self.batch_size)),
                 epochs=self.epochs,
                 verbose=2,
                 callbacks=callbacks,
                 validation_data=valid_generator(),
-                validation_steps=(len(df_valid) // self.batch_size) + 1)
+                validation_steps=math.ceil(len(df_valid) / float(self.batch_size)))
 
             if os.path.isfile(kfold_weights_path):
                 self.model.load_weights(kfold_weights_path)
@@ -328,7 +329,7 @@ class AmazonForest():
             # )
             # p_valid = model.predict(val_generator.x/255.0, batch_size = batch_size, verbose=2)
             p_valid = self.model.predict_generator(generator=valid_generator(),
-                                              steps=(len(df_valid) // self.batch_size) + 1)
+                                              steps=math.ceil(len(df_valid) / float(self.batch_size)))
 
             ## find best thresholds for each class
             y_valid = []
@@ -502,6 +503,8 @@ class AmazonForest():
 
 
     def test_new(self, thres, val_score, early_fusion=True):
+        print('Testing on {} samples'.format(len(self.df_test_data)))
+
         def test_generator(transformation):
             while True:
                 for start in range(0, len(self.df_test_data), self.batch_size):
@@ -526,7 +529,7 @@ class AmazonForest():
                 p_full_test = []
                 for i in range(6):
                     p_test = self.model.predict_generator(generator=test_generator(transformation=i),
-                                                     steps=(len(self.df_test_data) // self.batch_size) + 1)
+                                                     steps=math.ceil(len(self.df_test_data) / float(self.batch_size)))
                     p_full_test.append(p_test)
 
                 p_test = np.array(p_full_test[0])
@@ -559,11 +562,11 @@ class AmazonForest():
 
         print thresh
         for index in range(result.shape[0]):
-            pred = ' '.join(list(map(lambda x: inv_label_map[x], *np.where(result[index, :] == 1))))
+            pred = ' '.join(list(map(lambda x: self.inv_label_map[x], *np.where(result[index, :] == 1))))
             if len(pred) == 0:
                 if early_fusion:
                     pred = ' '.join(
-                        list(map(lambda x: inv_label_map[x], *np.argmax(raw_result[index, :] - thresh))))
+                        list(map(lambda x: self.inv_label_map[x], *np.argmax(raw_result[index, :] - thresh))))
                 else:
                     pred = ' '.join(list(map(lambda x: inv_label_map[x], *np.argmax(raw_result[index, :]))))
             preds.append(pred)
@@ -575,10 +578,10 @@ if __name__ == "__main__":
     af = AmazonForest()
 
     thresh, val_score = af.train_new()
-    # thresh, val_score = af.load_param()
+    # thresh, val_score = load_param()
     print("thresh:\n{}".format(thresh))
     print("val_score:", val_score)
 
-    af.test_new(thres=thresh, val_score=val_score, early_fusion=True, augmentation=1, mirror=True)
+    af.test_new(thres=thresh, val_score=val_score, early_fusion=True)
 
     # af.refine(thresh, val_score)
