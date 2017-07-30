@@ -14,7 +14,7 @@ from keras.layers.merge import add
 import densenet, densenet121
 
 
-def model1(input_dim):
+def model1(input_dim, output_dim=17):
     model = Sequential()
     model.add(BatchNormalization(input_shape=(input_dim, input_dim, 3)))
     model.add(Conv2D(32, kernel_size=(3, 3), padding='same', activation='relu'))
@@ -41,7 +41,7 @@ def model1(input_dim):
     model.add(Dense(512, activation='relu'))
     model.add(BatchNormalization())
     model.add(Dropout(0.5))
-    model.add(Dense(17, activation='sigmoid'))
+    model.add(Dense(output_dim, activation='sigmoid'))
     return model
 
 def model2(input_dim):
@@ -114,7 +114,8 @@ def model11(input_dim):
     model.add(Dropout(0.5))
     model.add(Dense(17, activation='sigmoid'))
     return model
-def model3(input_dim):
+
+def model3(input_dim, output_dim=17):
     model = Sequential()
     # preprocess
     model.add(BatchNormalization(input_shape=(input_dim, input_dim, 3)))
@@ -182,10 +183,10 @@ def model3(input_dim):
     model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(Dropout(0.5))
-    model.add(Dense(17, activation='sigmoid'))
+    model.add(Dense(output_dim, activation='sigmoid'))
     return model
 
-def model4(input_dim):
+def model4(input_dim, output_dim=17):
     # preprocess
     x = InputLayer(input_shape = (input_dim,input_dim,3)).input
     y1 = x
@@ -261,7 +262,7 @@ def model4(input_dim):
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
     x = Dropout(0.5)(x)
-    x = Dense(17, activation='sigmoid')(x)
+    x = Dense(output_dim, activation='sigmoid')(x)
 
     return Model(input=y1, output=x)
 
